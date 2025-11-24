@@ -8,12 +8,11 @@ const builtinIds = {
   //   firefox: "root________"
   // },
   toolbar: {
-    chrome: "1",
+    chrome: null,
     firefox: "toolbar_____"
   },
   other: {
-    // FIXME: it seems that vivaldi doesn't have "other bookmarks"?
-    chrome: "2",
+    chrome: null,
     firefox: "unfiled_____"
   },
   mobile: {
@@ -30,6 +29,60 @@ let running = false;
 let bookmarkChanged = false;
 let syncError = null;
 
+init();
+
+async function init() {
+  if (USER_AGENT === "chrome") {
+    const [root] = await browser.bookmarks.getTree();
+    for (const cat of root.children) {
+      // FIXME: chromium browsers don't have a persistent builtin ID for root folders. We have to rely on checking titles...
+      // does title changes when UI language changes?
+      // folderType works with Chrome 134+
+      if (cat.folderType === "bookmarks-bar" || /fav.*bar/i.test(cat.title)) {
+        builtinIds.toolbar.chrome = cat.id;
+      } else if (cat.folderType === "other" || /other.*fav/i.test(cat.title)) {
+        builtinIds.other.chrome = cat.id;
+      } else if (cat.folderType === "mobile") {
+        builtinIds.mobile.chrome = cat.id;
+      } else {
+        console.warn("The following folder is not synced", cat.id, cat.title, cat.folderType);
+      }
+    }
+  }
+
+  browser.bookmarks.onCreated.addListener(onBookmarkChanged)
+  browser.bookmarks.onRemoved.addListener(onBookmarkChanged)
+  browser.bookmarks.onChanged.addListener(onBookmarkChanged)
+  browser.bookmarks.onMoved.addListener(onBookmarkChanged)
+  browser.storage.onChanged.addListener(changes => {
+    if (changes.token || changes.gistId) {
+      // FIXME: should we clear bookmarkData when token is changed?
+      console.log("token or gistId changed")
+      scheduleSync();
+    }
+  });
+
+  scheduleSync();
+
+  browser.alarms.onAlarm.addListener(alarm => {
+    console.log("alarm", alarm)
+    if (alarm.name === 'sync') {
+      sync().catch(e => console.error(e));
+    }
+  });
+
+  const HANDLE_MESSAGE = {
+    getSyncError: () => Promise.resolve(syncError && String(syncError)),
+    sync: () => sync()
+  }
+
+  browser.runtime.onMessage.addListener(message => {
+    if (HANDLE_MESSAGE[message.action]) {
+      return HANDLE_MESSAGE[message.action](message);
+    }
+  });
+}
+
 async function sync() {
   if (running) {
     scheduleSync();
@@ -43,6 +96,7 @@ async function sync() {
     console.error(e);
     syncError = e;
     await delay(5000)
+    throw e;
   } finally {
     running = false;
   }
@@ -248,19 +302,6 @@ async function patchBookmarkFolder(local = [], remote, parentId) {
   }
 }
     
-browser.bookmarks.onCreated.addListener(onBookmarkChanged)
-browser.bookmarks.onRemoved.addListener(onBookmarkChanged)
-browser.bookmarks.onChanged.addListener(onBookmarkChanged)
-browser.bookmarks.onMoved.addListener(onBookmarkChanged)
-browser.storage.onChanged.addListener(changes => {
-  if (changes.token || changes.gistId) {
-    // FIXME: should we clear bookmarkData when token is changed?
-    console.log("token or gistId changed")
-    scheduleSync();
-  }
-});
-
-
 async function onBookmarkChanged() {
   console.log("onBookmarkChanged")
   const {token, gistId} = await browser.storage.local.get(['token', 'gistId']);
@@ -295,22 +336,3 @@ function scheduleSync(delayInMinutes = 1) {
   });
 }
 
-scheduleSync();
-
-browser.alarms.onAlarm.addListener(alarm => {
-  console.log("alarm", alarm)
-  if (alarm.name === 'sync') {
-    sync().catch(e => console.error(e));
-  }
-});
-
-const HANDLE_MESSAGE = {
-  getSyncError: () => Promise.resolve(syncError && String(syncError)),
-  sync: () => sync()
-}
-
-browser.runtime.onMessage.addListener(message => {
-  if (HANDLE_MESSAGE[message.action]) {
-    return HANDLE_MESSAGE[message.action](message);
-  }
-});
