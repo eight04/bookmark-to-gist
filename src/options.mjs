@@ -1,17 +1,20 @@
 import browser from "webextension-polyfill";
 
 const status = document.querySelector(".status");
+const opts = ["token", "gistId", "syncMode"];
 
 document.querySelector("[name=save]").addEventListener("click", async function() {
-  const token = document.querySelector("[name=token]").value;
-  const gistId = document.querySelector("[name=gistId]").value;
-  const syncMode = document.querySelector("[name=syncMode]:checked").value;
+  const output = {};
+  for (const opt of opts) {
+    const element = document.querySelector("[name=" + opt + "]");
+    if (element.type === "radio") {
+      output[opt] = document.querySelector("[name=" + opt + "]:checked").value;
+    } else {
+      output[opt] = element.value;
+    }
+  }
   status.textContent = "Saving...";
-  await browser.storage.local.set({
-    token: token,
-    gistId: gistId,
-    syncMode: syncMode
-  });
+  await browser.storage.local.set(output);
   status.textContent = "Options saved.";
 });
 
@@ -26,9 +29,17 @@ document.querySelector("[name=syncNow]").addEventListener("click", async functio
 });
 
 browser.storage.local.get(["token", "gistId", "syncMode"]).then(function(result) {
-  document.querySelector("[name=token]").value = result.token || "";
-  document.querySelector("[name=gistId]").value = result.gistId || "";
-  document.querySelector("[name=syncMode][value='" + (result.syncMode || "merge") + "']").checked = true;
+  for (const opt of opts) {
+    if (result[opt] === undefined) {
+      result[opt] = "";
+    }
+    const element = document.querySelector("[name=" + opt + "]");
+    if (element.type === "radio") {
+      document.querySelector("[name=" + opt + "][value='" + result[opt] + "']").checked = true;
+    } else {
+      element.value = result[opt];
+    }
+  }
 });
 
 browser.runtime.sendMessage({action: "getSyncError"}).then(function(syncError) {
@@ -64,3 +75,14 @@ browser.runtime.onMessage.addListener(function(message) {
     pre.textContent += "\n" + formatLog(message.log);
   }
 });
+
+browser.storage.local.getKeys()
+  .then(async keys => {
+    const wipKeys = keys.filter(key => key.startsWith('wip-'));
+    if (wipKeys.length > 0) {
+      const result = await browser.storage.local.get(wipKeys);
+      const wips = Object.values(result).map(w => JSON.stringify(w)).join('\n');
+      const container = document.querySelector('.wip');
+      container.textContent = wips;
+    }
+  });
