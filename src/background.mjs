@@ -188,7 +188,7 @@ async function _sync() {
           await patchBookmarkDiff(diff, remoteData);
           finalDataArr.push(remoteData, await getBookmarkData());
         } catch (e) {
-          logger.error("failed to apply diff to remoteData", e);
+          logger.log("failed to apply diff to remoteData", e.message || String(e));
           browser.storage.local.set({[`wip-${Date.now()}`]: diff});
         }
       } else {
