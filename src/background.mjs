@@ -149,6 +149,7 @@ async function _sync() {
   const remoteData = await getRemoteData(token, gistId);
   const shouldPull = remoteData && (!storedData || remoteData.lastUpdate > storedData.lastUpdate);
   const shouldPush = isFirstSync ? syncMode !== "pullOnly" : bookmarkChanged;
+  bookmarkChanged = false;
   logger.log(`shouldPull: ${shouldPull}, shouldPush: ${shouldPush}`);
 
   const currentData = shouldPush ? await getBookmarkData() : null;
@@ -257,6 +258,7 @@ function cleanBookmark(bookmark) {
 }
 
 async function patchGist(data, token, gistId) {
+  logger.log("patch remote gist");
   const r = await fetch(`https://api.github.com/gists/${gistId}`, {
     method: 'PATCH',
     headers: {
@@ -277,6 +279,7 @@ async function patchGist(data, token, gistId) {
 }
 
 async function patchBookmark(remote) {
+  logger.log("patch local bookmarks");
   for (const baseKey in builtinIds) {
     const parentId = builtinIds[baseKey][USER_AGENT];
     if (!parentId) continue;
