@@ -17,7 +17,8 @@
     "dev": "run-p -r build-watch start",
     "preversion": "npm test",
     "version": "npm run build && git add .",
-    "postversion": "git push --follow-tags && npm run build"
+    "postversion": "git push --follow-tags && npm run build",
+    "changelog": "node tools/changelog.js"
   },
   "eslintIgnore": [
     "build"

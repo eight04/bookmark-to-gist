@@ -53,3 +53,9 @@ There is no way to detect bookmark imports in Firefox. You have to make some cha
 ### Todos
 
 * Support truncated response: https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#truncation
+
+### Changelog
+
+* 1.0.0 (Nov 26, 2025)
+
+  - Initial release
