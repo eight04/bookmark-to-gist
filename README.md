@@ -10,17 +10,17 @@ Inspired by [shanalikhan/code-settings-sync](https://github.com/shanalikhan/code
 2. Create a [new gist](https://gist.github.com/) with a file named `bookmark.json` and the content `null`.
 3. Put in the token and gist ID in the option page.
 
-### Details
+### Details:
 
-Sync starts automatically after settings is saved, or when bookmark changes.
+Syncing starts automatically after the settings are saved or when the bookmarks change.
 
-If this is the first sync and remote data is available, it pulls the remote data. 
+First, it pulls the remote data, then applies it to the local bookmarks.
 
-If remote data is not available, it pushes local data to remote.
+If there are local changes before the sync starts, the local changes will be patched to the remote data. Then, the merged data will be pushed to the remote.
 
-Otherwise it checks the `lastUpdate` information to decide to push or pull.
+During the initial sync, all local bookmarks are appended to the remote data, unless the Sync Mode is set to Pull Only.
 
-Note that there is no "merge" strategy in this extension. Either all local bookmarks or all remote bookmarks are overwritten after sync. **Therefore your local bookmarks will be lost if you pull remote data. Be careful when using this extension for the first time.**
+If an error occurs while patching local changes to the remote data (e.g., if some bookmarks are deleted remotely), the patch is skipped and the changes are stored locally. You can view these changes on the Options page.
 
 ### Cross browser compatibility
 
@@ -33,12 +33,13 @@ Firefox has four root folders:
 * mobile
 * other
 
-Chrome has only two:
+Chrome has only three:
 
 * toolbar
+* mobile
 * other
 
-When pushing the data, all folders will be pushed to gist. When pulling, only supported folders will be pulled. Therefore bookmarks from Firefox's menu/mobile won't be synced to Chrome. (They still sync between Firefox browsers.)
+When pushing the data, all folders will be pushed to gist. When pulling, only supported folders will be pulled. Therefore bookmarks from Firefox's menu won't be synced to Chrome. (They still sync between Firefox browsers.)
 
 #### Import issue in Firefox
 
