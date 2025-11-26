@@ -27,5 +27,12 @@
     "gecko": {
       "id": "bookmark-sync@eight04.blogspot.com"
     }
+  },
+  "browser_action": {
+    "default_icon": {
+      "16": "images/logo-16.png",
+      "48": "images/logo-48.png"
+    },
+    "default_title": "__MSG_extName__"
   }
 }

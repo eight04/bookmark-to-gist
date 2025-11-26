@@ -83,6 +83,10 @@ async function init() {
       return HANDLE_MESSAGE[message.action](message);
     }
   });
+
+  browser.browserAction.onClicked.addListener(() => {
+    browser.runtime.openOptionsPage();
+  });
 }
 
 async function sync() {
@@ -182,6 +186,7 @@ async function _sync() {
   if (!storedData || finalData.lastUpdate > storedData.lastUpdate) {
     await browser.storage.local.set({bookmarkData: finalData});
   }
+  logger.log("sync finished");
 }
 
 function diffBookmarkData(oldData, newData) {
