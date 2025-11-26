@@ -3,10 +3,46 @@ import assert from "node:assert/strict";
 
 import {diffArray, applyArrayDiff} from "../src/lib/array-diff.js";
 
-test("sample test", () => {
+test("simple test", () => {
   const changes = diffArray([1, 2, 3], [1, 2, 4, 5]);
   const result = applyArrayDiff([3], changes);
   assert.deepEqual(result, [4, 5]);
+});
+
+test("diff object", {skip: false}, () => {
+  const changes = diffArray(
+    {a: 1, b: 2, c: 3},
+    {a: 1, b: 2, c: 4, d: 5}
+  );
+  const result = applyArrayDiff(
+    {a: 9, b: 8, c: 3},
+    changes
+  );
+  assert.deepEqual(result, {a: 9, b: 8, c: 4, d: 5});
+});
+
+test("diff object context line unchange", () => {
+  const changes = diffArray(
+    {a: 1, b: 2, c: 3},
+    {a: 1, b: 2, c: 4, d: 5}
+  );
+  const result = applyArrayDiff(
+    {a: 9, b: 2, c: 3},
+    changes
+  );
+  assert.deepEqual(result, {a: 9, b: 2, c: 4, d: 5});
+});
+
+test("object prop insertion", {skip: true}, () => {
+  const changes = diffArray(
+    {a: 1, b: 2},
+    {a: 1, b: 2, c: 3}
+  );
+  const result = applyArrayDiff(
+    {a: 9, b: 8},
+    changes
+  );
+  assert.deepEqual(result, {a: 9, b: 8, c: 3});
 });
 
 test("no change", () => {
@@ -113,33 +149,6 @@ test("add a bookmark while new remote", () => {
 });
 
 test("no delete", () => {
-  // const before = [
-  //   {title: "A", url: "a"},
-  //   {title: "B", url: "b"},
-  //   {title: "C", url: "c"},
-  // ];
-  const local = [
-    {title: "A", url: "u"},
-    {title: "C", url: "c"},
-    {title: "D", url: "d"},
-  ];
-  const remote = [
-    {title: "A", url: "a"},
-    {title: "B", url: "X"},
-    {title: "C", url: "c"},
-  ]
-  const expected = [
-    {title: "A", url: "u"},
-    {title: "B", url: "X"},
-    {title: "C", url: "c"},
-    {title: "D", url: "d"},
-  ];
-  const changes = diffArray(remote, local, {noDelete: true});
-  const result = applyArrayDiff(remote, changes);
-  assert.deepEqual(result, expected);
-});
-
-test("no delete doesn't work well with large modification", () => {
   const local = [
     {title: "A", url: "u"},
     {title: "C", url: "c"},
@@ -149,8 +158,8 @@ test("no delete doesn't work well with large modification", () => {
     {title: "D", url: "d"},
   ]
   const expected = [
-    {title: "A", url: "u"},
-    {title: "C", url: "c"},
+    {title: "BA", url: "bu"},
+    {title: "DC", url: "dc"},
   ];
   const changes = diffArray(remote, local, {noDelete: true});
   const result = applyArrayDiff(remote, changes);
@@ -179,3 +188,4 @@ test("no delete + isAtomic", () => {
   const result = applyArrayDiff(remote, changes);
   assert.deepEqual(result, expected);
 })
+

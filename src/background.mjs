@@ -106,7 +106,7 @@ async function sync() {
     console.error(e);
     logger.log("Sync error:", e);
     syncError = e;
-    await delay(5000)
+    await delay(5000);
     throw e;
   } finally {
     running = false;
@@ -125,7 +125,7 @@ async function getRemoteData(token, gistId, isFirstSync) {
       Accept: "application/vnd.github+json",
       Authorization: `token ${token}`
     },
-  })
+  });
   if (!r.ok) {
     throw new Error(await r.text());
   }
@@ -211,11 +211,11 @@ async function _sync() {
   logger.log("sync finished");
 }
 
-function diffBookmarkData(oldData, newData) {
+function diffBookmarkData(oldData, newData, options) {
   const result = {};
   for (const key in builtinIds) {
     if (!newData[key]) continue;
-    const r = diffArray(oldData[key] || [], newData[key]);
+    const r = diffArray(oldData[key] || [], newData[key], options);
     if (!r) continue;
     result[key] = r;
   }
@@ -231,7 +231,7 @@ async function patchBookmarkDiff(diff, data) {
     if (!data[key]) {
       data[key] = [];
     }
-    applyArrayDiff(data[key], diff[key]);
+    data[key] = applyArrayDiff(data[key], diff[key]);
   }
   await patchBookmark(data);
 }

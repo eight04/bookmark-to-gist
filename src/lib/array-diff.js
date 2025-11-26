@@ -3,10 +3,24 @@ import jsonStringify from "safe-stable-stringify";
 
 import * as jp from './jsonpath.js';
 
-export function diffArray(arr1, arr2, {noDelete = false, ...options} = {}) {
+/**
+ * Diff two arrays (object) and produce a patch.
+ * @param {Array|Object} arr1 - The original array.
+ * @param {Array|Object} arr2 - The modified array.
+ * @param {Object} [options] - Options for diffing.
+ * @param {boolean} [options.noDelete=false] - If true, do not include deletions in the patch.
+ * @param {(obj) => boolean} [options.isAtomic] - A function to determine if an object should be treated as atomic. This will affect whether the entire object will be replaced or the properties of the object will be replaced.
+ * @returns {Object|null} - The patch object or null if no changes.
+ */
+export function diffArray(arr1, arr2, {noDelete = false, context, ...options} = {}) {
   const str1 = stringify(arr1, options);
   const str2 = stringify(arr2, options);
-  let patch = createPatch('array-diff', str1, str2, null, null, { context: 1 });
+  // FIXME: context should be calculated based on the size of the first hunk
+  if (context == null) {
+    context = Math.min(1, Math.round(str1.split('\n').length / 2));
+  }
+  let patch = createPatch('array-diff', str1, str2, null, null, { context });
+  // const changes = diffLines(str1, str2);
   if (!/^@@/m.test(patch)) {
     return null;
   }
@@ -28,9 +42,16 @@ export function diffArray(arr1, arr2, {noDelete = false, ...options} = {}) {
   return {patch, options: {noDelete, ...options}};
 }
 
-export function applyArrayDiff(arr, diff) {
+/**
+ * Apply a patch to an array (object)
+ * @param {Array|Object} arr - The original array.
+ * @param {Object} diff - The patch object produced by `diffArray`.
+ * @returns {Array|Object} - The modified array after applying the patch. This is not the same object as the input array.
+ */
+export function applyArrayDiff(arr, diff, {fuzzFactor = 20} = {}) {
   const str = stringify(arr, diff.options);
-  const patchedStr = applyPatch(str, diff.patch);
+  // FIXME: how to choose fuzzFactor?
+  const patchedStr = applyPatch(str, diff.patch, { fuzzFactor });
   if (patchedStr === false) {
     throw new Error('Failed to apply patch');
   }
@@ -66,7 +87,14 @@ function stringify(obj, {isAtomic} = {}) {
     } else if (obj === undefined) {
       yield `${prefix} = undefined`;
     } else {
-      yield `${prefix} = ${JSON.stringify(obj)}`;
+      if (/\.[^[\]]*$/.test(prefix)) {
+        // property of an object
+        // keep them separated so changing value will still have one path line unchange
+        yield `${prefix} = nol`;
+        yield `${prefix} = ${JSON.stringify(obj)}`;
+      } else {
+        yield `${prefix} = ${JSON.stringify(obj)}`;
+      }
     }
   }
 }
@@ -89,7 +117,13 @@ function parse(str, {noDelete = false} = {}) {
         // add a new slot for the next element
         continue;
       }
-      const value = valueStr === 'undefined' ? undefined : JSON.parse(valueStr);
+      let value;
+      if (valueStr === 'nol') {
+        continue;
+        // value = JSON.parse(lines[i]);
+      } else {
+        value = valueStr === 'undefined' ? undefined : JSON.parse(valueStr);
+      }
       [root] = jp.set(root, path, value, {conflict: noDelete ? "append" : "overwrite"});
     }
     // Clean up trailing empty slots in arrays
@@ -103,4 +137,3 @@ function parse(str, {noDelete = false} = {}) {
     return root;
   }
 }
-

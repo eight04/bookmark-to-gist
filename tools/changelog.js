@@ -1,5 +1,4 @@
-// print lagest changelog entry from README.md
-
+// print latest changelog entry from README.md
 import fs from 'fs';
 
 const readmePath = './README.md';

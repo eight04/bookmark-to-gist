@@ -2,9 +2,7 @@
 
 This is a fork of [bookmark sync](https://github.com/dodying/Bookmark-Sync) though most of the code is rewritten.
 
-Syncs browser bookmarks to a GitHub Gist. Support Firefoxs, Firefox for Android, Chromium-based browsers (MV2), and Edge for Android.
-
-### 
+Syncs browser bookmarks to a GitHub Gist. Support Firefox, Firefox for Android, Chromium-based browsers (MV2), and Edge for Android.
 
 ### Usage
 
@@ -53,6 +51,26 @@ There is no way to detect bookmark imports in Firefox. You have to make some cha
 ### Todos
 
 * Support truncated response: https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#truncation
+
+### flat-json-diff
+
+Suppose we have localDataOld, localDataNew, remoteData. The current way to diff JSON objects is to:
+
+1. Flatten `localDataOld` and `localDataNew` to lines.
+2. Diff the lines.
+3. Grab the context around the changed lines, create a patch.
+4. Flatten `remoteData` to lines.
+5. Apply the patch to the flattened `remoteData`.
+6. Unflatten the patched lines to JSON object.
+
+However, there are some limitations: https://github.com/kpdecker/jsdiff
+
+> Regardless of fuzzFactor, lines to be deleted in the hunk must be present for a hunk to match, and the context lines immediately before and after an insertion must match exactly.
+
+1. Modifying a deleted line/Deleting a modified line will always fail.
+2. When adding property, the property before/after the changed property must be the same. Ideally, adding an object property should always succeed. Fortunately, we don't add properties.
+
+In the future, we should use DP with a "least change" strategy.
 
 ### Changelog
 

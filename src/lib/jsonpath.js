@@ -41,10 +41,15 @@ export function set(root, path, value, {conflict = 'overwrite'} = {}) {
       }
       part = obj.length - 1;
     }
-    if (isArrayPart && index === parts.length - 1 && conflict === 'append' && obj[ part ] !== undefined) {
-      obj.push(buildObj(undefined, index + 1));
+    if (index === parts.length - 1 && conflict === 'append' && obj[ part ] !== undefined) {
+      if (isArrayPart) {
+        obj.push(buildObj(undefined, index + 1));
+      } else {
+        // FIXME: what to do here?
+        obj[part] += value;
+      }
     } else {
-      obj[ part ] = buildObj(obj[ part ], index + 1);
+      obj[part] = buildObj(obj[ part ], index + 1);
     }
     return obj;
   }
