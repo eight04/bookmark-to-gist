@@ -6,6 +6,9 @@ export function diffArray(arr1, arr2) {
   const str1 = stringify(arr1);
   const str2 = stringify(arr2);
   const patch = createPatch('array-diff', str1, str2, null, null, { context: 1 });
+  if (!/^@@/m.test(patch)) {
+    return null;
+  }
   return patch;
 }
 

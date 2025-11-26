@@ -9,6 +9,12 @@ test("sample test", () => {
   assert.deepEqual(result, [4, 5]);
 });
 
+test("no change", () => {
+  const changes = diffArray([1, 2, 3], [1, 2, 3]);
+  console.log(changes);
+  assert(!changes);
+});
+
 test("remove a bookmark", () => {
   const before = [
     {title: "A", url: "a"},
