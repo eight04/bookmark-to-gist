@@ -1,4 +1,5 @@
 import {createPatch, applyPatch, parsePatch, formatPatch} from 'diff';
+import jsonStringify from "safe-stable-stringify";
 
 import * as jp from './jsonpath.js';
 
@@ -45,8 +46,8 @@ function stringify(obj, {isAtomic} = {}) {
   return Array.from(_stringify(obj)).join('\n');
 
   function *_stringify(obj, prefix = '') {
-    if (isAtomic && isAtomic(obj)) {
-      yield `${prefix} = ${JSON.stringify(obj)}`;
+    if (typeof obj === "object" && obj !== null && isAtomic?.(obj)) {
+      yield `${prefix} = ${jsonStringify(obj)}`;
     } else if (Array.isArray(obj)) {
       // yield `${prefix} = []`;
       for (const item of obj) {

@@ -175,7 +175,9 @@ async function _sync() {
     let diff;
     if (isFirstSync && syncMode === "merge" && remoteData) {
       // merge mode on first sync: merge remoteData and currentData
-      diff = diffBookmarkData(remoteData, currentData, {noDelete: true});
+      diff = diffBookmarkData(remoteData, currentData, {noDelete: true, isAtomic: (obj) => {
+        return obj.type === "bookmark" || obj.type === "separator";
+      }});
     } else {
       diff = diffBookmarkData(storedData || {}, currentData);
     }
