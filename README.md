@@ -1,24 +1,29 @@
-# Bookmark Sync
+# bookmark to gist
 
-### [Firefox Addon](https://addons.mozilla.org/firefox/addon/bookmark-sync/)
+This is a fork of [bookmark sync](https://github.com/dodying/Bookmark-Sync) though most of the code is rewritten.
 
-Inspired by [shanalikhan/code-settings-sync](https://github.com/shanalikhan/code-settings-sync) and Xmarks is dead :cry:
+Syncs browser bookmarks to a GitHub Gist. Support Firefoxs, Firefox for Android, Chromium-based browsers (MV2), and Edge for Android.
+
+### 
 
 ### Usage
 
-1. Cteate a [New personal access token](https://github.com/settings/tokens/new), and add `gist` in scope. [Like this](https://github.com/shanalikhan/code-settings-sync#steps-to-get-a-personal-access-token-from-github)
+1. Cteate a [New personal access token](https://github.com/settings/personal-access-tokens), and grant `gist` permission.
 2. Create a [new gist](https://gist.github.com/) with a file named `bookmark.json` and the content `null`.
-3. Put in the token and gist ID in the option page.
+3. Open the option page by clicking the extension icon.
+4. Put in the token and gist ID.
+5. Choose the sync mode.
+6. Click Save.
 
-### Details:
+Syncing runs periodically and when bookmarks change.
 
-Syncing starts automatically after the settings are saved or when the bookmarks change.
+### How it works
 
 First, it pulls the remote data, then applies it to the local bookmarks.
 
 If there are local changes before the sync starts, the local changes will be patched to the remote data. Then, the merged data will be pushed to the remote.
 
-During the initial sync, all local bookmarks are appended to the remote data, unless the Sync Mode is set to Pull Only.
+During the initial sync, all local bookmarks are merged to the remote data, unless the Sync Mode is set to Pull Only.
 
 If an error occurs while patching local changes to the remote data (e.g., if some bookmarks are deleted remotely), the patch is skipped and the changes are stored locally. You can view these changes on the Options page.
 

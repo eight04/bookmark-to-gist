@@ -1,7 +1,7 @@
 // set value at path in object
 // path may include [] representing the last element of an array
 const RX = /[\w$]+|\.[\w$]+|\[\]/y;
-export function set(root, path, value, overwrite = true) {
+export function set(root, path, value, {conflict = 'overwrite'} = {}) {
   const parts = [];
   RX.lastIndex = 0;
   let match;
@@ -19,7 +19,7 @@ export function set(root, path, value, overwrite = true) {
 
   function buildObj(obj, index) {
     if (index >= parts.length) {
-      if (obj !== undefined && !overwrite) {
+      if (obj !== undefined && conflict === 'skip') {
         lastValue = obj;
         return obj;
       }
@@ -27,20 +27,25 @@ export function set(root, path, value, overwrite = true) {
       return value;
     }
     let part = parts[index];
+    const isArrayPart = part === '[]';
     if (!obj) {
-      if (part === '[]') {
+      if (isArrayPart) {
         obj = [];
       } else {
         obj = {};
       }
     }
-    if (part === '[]') {
+    if (isArrayPart) {
       if (!obj.length) {
         obj.push(undefined);
       }
       part = obj.length - 1;
     }
-    obj[ part ] = buildObj(obj[ part ], index + 1);
+    if (isArrayPart && index === parts.length - 1 && conflict === 'append' && obj[ part ] !== undefined) {
+      obj.push(buildObj(undefined, index + 1));
+    } else {
+      obj[ part ] = buildObj(obj[ part ], index + 1);
+    }
     return obj;
   }
 }

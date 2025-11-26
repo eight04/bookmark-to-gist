@@ -34,23 +34,27 @@ let syncError = null;
 
 init();
 
+async function initChromeBuiltinIds() {
+  const [root] = await browser.bookmarks.getTree();
+  for (const cat of root.children) {
+    // FIXME: chromium browsers don't have a persistent builtin ID for root folders. We have to rely on checking titles...
+    // does title changes when UI language changes?
+    // folderType works with Chrome 134+
+    if (cat.folderType === "bookmarks-bar" || /fav.*bar/i.test(cat.title)) {
+      builtinIds.toolbar.chrome = cat.id;
+    } else if (cat.folderType === "other" || /other.*fav/i.test(cat.title)) {
+      builtinIds.other.chrome = cat.id;
+    } else if (cat.folderType === "mobile") {
+      builtinIds.mobile.chrome = cat.id;
+    } else {
+      logger.log("The following folder is not synced", cat.id, cat.title, cat.folderType);
+    }
+  }
+}
+
 async function init() {
   if (USER_AGENT === "chrome") {
-    const [root] = await browser.bookmarks.getTree();
-    for (const cat of root.children) {
-      // FIXME: chromium browsers don't have a persistent builtin ID for root folders. We have to rely on checking titles...
-      // does title changes when UI language changes?
-      // folderType works with Chrome 134+
-      if (cat.folderType === "bookmarks-bar" || /fav.*bar/i.test(cat.title)) {
-        builtinIds.toolbar.chrome = cat.id;
-      } else if (cat.folderType === "other" || /other.*fav/i.test(cat.title)) {
-        builtinIds.other.chrome = cat.id;
-      } else if (cat.folderType === "mobile") {
-        builtinIds.mobile.chrome = cat.id;
-      } else {
-        logger.log("The following folder is not synced", cat.id, cat.title, cat.folderType);
-      }
-    }
+    await initChromeBuiltinIds();
   }
 
   browser.bookmarks.onCreated.addListener(onBookmarkChanged)
@@ -168,7 +172,13 @@ async function _sync() {
     finalDataArr.push(storedData, remoteData);
   }
   if (shouldPush) {
-    const diff = diffBookmarkData(storedData || {}, currentData);
+    let diff;
+    if (isFirstSync && syncMode === "merge" && remoteData) {
+      // merge mode on first sync: merge remoteData and currentData
+      diff = diffBookmarkData(remoteData, currentData, {noDelete: true});
+    } else {
+      diff = diffBookmarkData(storedData || {}, currentData);
+    }
     if (diff) {
       if (shouldPull) {
         // apply diff to remoteData
