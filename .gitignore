@@ -1,8 +1,8 @@
-.web-extension-id
-web-ext-artifacts
 *.crx
 *.pem
-node_modules
-build
+*.zip
 .eslintcache
-
+.web-extension-id
+build
+node_modules
+web-ext-artifacts

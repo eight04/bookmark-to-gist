@@ -12,7 +12,7 @@
     "build": "npm run build-src && npm run build-artifact",
     "build-src": "sync-version src/static/manifest.json && shx rm -rf build/* && rollup -c",
     "build-locales": "tx pull -a --use-git-timestamps && webext-tx-fix -s src/static",
-    "build-artifact": "shx rm -rf web-ext-artifacts/* && web-ext build --ignore-files **/*.js.map && git archive -o web-ext-artifacts/source.zip HEAD && node tools/build-crx.js",
+    "build-artifact": "shx rm -rf web-ext-artifacts/* && web-ext build --ignore-files **/*.js.map && git archive -o source.zip HEAD && node tools/build-crx.js",
     "build-watch": "rollup -c -w",
     "dev": "run-p -r build-watch start",
     "preversion": "npm test",
