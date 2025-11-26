@@ -14,11 +14,19 @@
     <input type="text" name="token">
     <br> Gist ID:
     <input type="text" name="gistId">
+    <br>Sync mode:
+    <label>
+      <input type="radio" name="syncMode" value="merge"> Merge
+    </label>
+    <label>
+      <input type="radio" name="syncMode" value="pullOnly"> Pull Only
+    </label>
   </div>
   <div style="display: flex;">
     <button class="button" name="save" type="button">Save</button>
     <button class="button" name="syncNow" type="button">Sync Now</button>
   </div>
   <div class="status"></div>
+  <pre class="logs"></pre>
 </body>
 </html>

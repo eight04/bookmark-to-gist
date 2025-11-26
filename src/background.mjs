@@ -1,5 +1,8 @@
 import browser from "webextension-polyfill";
 
+import {diffArray, applyArrayDiff} from "./lib/array-diff.js";
+import * as logger from "./lib/logger.js";
+
 const USER_AGENT = navigator.userAgent.match(/Firefox/) ? "firefox" : "chrome";
 
 const builtinIds = {
@@ -26,7 +29,7 @@ const builtinIds = {
 }
 
 let running = false;
-let bookmarkChanged = false;
+let bookmarkChanged = true; // assume changed on startup
 let syncError = null;
 
 init();
@@ -45,7 +48,7 @@ async function init() {
       } else if (cat.folderType === "mobile") {
         builtinIds.mobile.chrome = cat.id;
       } else {
-        console.warn("The following folder is not synced", cat.id, cat.title, cat.folderType);
+        logger.log("The following folder is not synced", cat.id, cat.title, cat.folderType);
       }
     }
   }
@@ -57,7 +60,6 @@ async function init() {
   browser.storage.onChanged.addListener(changes => {
     if (changes.token || changes.gistId) {
       // FIXME: should we clear bookmarkData when token is changed?
-      console.log("token or gistId changed")
       scheduleSync();
     }
   });
@@ -65,7 +67,6 @@ async function init() {
   scheduleSync();
 
   browser.alarms.onAlarm.addListener(alarm => {
-    console.log("alarm", alarm)
     if (alarm.name === 'sync') {
       sync().catch(e => console.error(e));
     }
@@ -73,7 +74,8 @@ async function init() {
 
   const HANDLE_MESSAGE = {
     getSyncError: () => Promise.resolve(syncError && String(syncError)),
-    sync: () => sync()
+    sync: () => sync(),
+    getLogs: () => Promise.resolve(logger.records),
   }
 
   browser.runtime.onMessage.addListener(message => {
@@ -94,6 +96,7 @@ async function sync() {
     syncError = null;
   } catch (e) {
     console.error(e);
+    logger.log("Sync error:", e);
     syncError = e;
     await delay(5000)
     throw e;
@@ -104,16 +107,6 @@ async function sync() {
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function compareData(a, b) {
-  for (const key in builtinIds) {
-    if (!builtinIds[key][USER_AGENT]) continue;
-    if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) {
-      return 1;
-    }
-  }
-  return 0;
 }
 
 async function getRemoteData(token, gistId) {
@@ -131,50 +124,101 @@ async function getRemoteData(token, gistId) {
   if (data.truncated) {
     throw new Error("Gist content is too large");
   }
-  return data.files['bookmark.json'] ? JSON.parse(data.files['bookmark.json'].content) : null;
+  if (!data.files['bookmark.json']) {
+    return null;
+  }
+  if (data.files['bookmark.json'].truncated) {
+    throw new Error("bookmark.json is too large");
+  }
+  return JSON.parse(data.files['bookmark.json'].content);
 }
 
 async function _sync() {
-  console.log(`sync start, bookmarkChanged: ${bookmarkChanged}`);
-  let {token, bookmarkData, gistId} = await browser.storage.local.get(['token', 'bookmarkData', 'gistId']);
+  // FIXME: there is no locking mechanism to gist, concurrent sync may cause data loss
+  logger.log(`sync start, bookmarkChanged: ${bookmarkChanged}`);
+  let {token, bookmarkData: storedData, gistId, syncMode = "merge"} = await browser.storage.local.get(['token', 'bookmarkData', 'gistId', 'syncMode']);
+  const isFirstSync = !storedData;
   if (!token || !gistId) {
-    console.log("not login");
+    logger.log("not login");
     return;
   }
   const remoteData = await getRemoteData(token, gistId);
-  console.log("remoteData: ", remoteData);
-  if (remoteData) {
-    if (!bookmarkData || bookmarkData.lastUpdate < remoteData.lastUpdate) {
-      console.log("patch local bookmark");
-      await patchBookmark(remoteData);
-      await browser.storage.local.set({bookmarkData: remoteData});
-      bookmarkData = remoteData;
-    } else if (bookmarkData && bookmarkData.lastUpdate > remoteData.lastUpdate) {
-      console.log("patch gist (local is newer, the previous push failed?)");
-      await patchGist(bookmarkData, token, gistId);
+  const shouldPull = remoteData && (!storedData || remoteData.lastUpdate > storedData.lastUpdate);
+  const shouldPush = isFirstSync ? syncMode !== "pullOnly" : bookmarkChanged;
+  logger.log(`shouldPull: ${shouldPull}, shouldPush: ${shouldPush}`);
+
+  const currentData = shouldPush ? await getBookmarkData() : null;
+  const finalDataArr = [];
+
+  if (shouldPull) {
+    await patchBookmark(remoteData);
+    finalDataArr.push(storedData, remoteData);
+  }
+  if (shouldPush) {
+    if (shouldPull) {
+      // apply diff to remoteData
+      const diff = diffBookmarkData(storedData || {}, currentData);
+      if (diff) {
+        try {
+          await patchBookmarkDiff(diff, remoteData);
+          finalDataArr.push(remoteData, await getBookmarkData());
+        } catch (e) {
+          logger.error("failed to apply diff to remoteData", e);
+          browser.storage.local.set({[`wip-${Date.now()}`]: diff});
+        }
+      }
+    } else {
+      finalDataArr.push(storedData, currentData);
     }
   }
-  if (!bookmarkChanged && remoteData) {
-    console.log("no need to push");
+  if (!finalDataArr.length) {
+    logger.log("no changes");
     return;
   }
-  bookmarkChanged = false;
-  console.log("get local bookmark")
-  const newBookmarkData = await getBookmarkData();
-  if (bookmarkData && compareData(bookmarkData, newBookmarkData) === 0) {
-    console.log("no change");
-    return;
+  const finalData = mergeDataArr(finalDataArr);
+  if (!remoteData || finalData.lastUpdate > remoteData.lastUpdate) {
+    await patchGist(finalData, token, gistId);
   }
-  if (!bookmarkData) {
-    console.log("remote is empty, push local bookmarks");
-    bookmarkData = newBookmarkData;
-  } else {
-    console.log("merge local and remote bookmarks");
-    Object.assign(bookmarkData, newBookmarkData);
+  if (!storedData || finalData.lastUpdate > storedData.lastUpdate) {
+    await browser.storage.local.set({bookmarkData: finalData});
   }
-  console.log("patch gist");
-  await patchGist(bookmarkData, token, gistId);
-  await browser.storage.local.set({bookmarkData});
+}
+
+function diffBookmarkData(oldData, newData) {
+  const result = {};
+  for (const key in builtinIds) {
+    if (!newData[key]) continue;
+    const r = diffArray(oldData[key] || [], newData[key]);
+    if (!r) continue;
+    result[key] = r;
+  }
+  if (Object.keys(result).length === 0) {
+    return null;
+  }
+  return result;
+}
+
+async function patchBookmarkDiff(diff, data) {
+  data = structuredClone(data);
+  for (const key in diff) {
+    if (!data[key]) {
+      data[key] = [];
+    }
+    applyArrayDiff(data[key], diff[key]);
+  }
+  await patchBookmark(data);
+}
+
+function mergeDataArr(dataArr) {
+  const o = {};
+  const set = new Set;
+  for (const data of dataArr) {
+    if (!data) continue;
+    if (set.has(data)) continue;
+    set.add(data);
+    Object.assign(o, data);
+  }
+  return o;
 }
 
 async function getBookmarkData() {
@@ -303,7 +347,6 @@ async function patchBookmarkFolder(local = [], remote, parentId) {
 }
     
 async function onBookmarkChanged() {
-  console.log("onBookmarkChanged")
   const {token, gistId} = await browser.storage.local.get(['token', 'gistId']);
   if (!token || !gistId) return;
   // FIXME: we will loose the bookmarkChanged state if the browser is closed before the sync

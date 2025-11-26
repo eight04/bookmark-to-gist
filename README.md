@@ -18,9 +18,9 @@ If this is the first sync and remote data is available, it pulls the remote data
 
 If remote data is not available, it pushes local data to remote.
 
-Otherwise it checks the `lastUdpate` information to decide to push or pull.
+Otherwise it checks the `lastUpdate` information to decide to push or pull.
 
-Note that there is no "merge" strategy in this extension. Either all local bookmarks or all remote bookmarks are overwritten after sync.
+Note that there is no "merge" strategy in this extension. Either all local bookmarks or all remote bookmarks are overwritten after sync. **Therefore your local bookmarks will be lost if you pull remote data. Be careful when using this extension for the first time.**
 
 ### Cross browser compatibility
 
