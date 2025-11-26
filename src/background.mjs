@@ -113,7 +113,8 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function getRemoteData(token, gistId) {
+let remoteLastModified = null;
+async function getRemoteData(token, gistId, isFirstSync) {
   const r = await fetch(`https://api.github.com/gists/${gistId}`, {
     method: 'GET',
     headers: {
@@ -124,11 +125,18 @@ async function getRemoteData(token, gistId) {
   if (!r.ok) {
     throw new Error(await r.text());
   }
+  const newLastModified = r.headers.get('last-modified');
+  if (!isFirstSync && remoteLastModified === newLastModified) {
+    logger.log("remote gist not modified");
+    return null;
+  }
+  remoteLastModified = newLastModified;
   const data = await r.json();
   if (data.truncated) {
     throw new Error("Gist content is too large");
   }
   if (!data.files['bookmark.json']) {
+    logger.log("remote gist has no bookmark.json");
     return null;
   }
   if (data.files['bookmark.json'].truncated) {
@@ -146,7 +154,7 @@ async function _sync() {
     logger.log("not login");
     return;
   }
-  const remoteData = await getRemoteData(token, gistId);
+  const remoteData = await getRemoteData(token, gistId, isFirstSync);
   const shouldPull = remoteData && (!storedData || remoteData.lastUpdate > storedData.lastUpdate);
   const shouldPush = isFirstSync ? syncMode !== "pullOnly" : bookmarkChanged;
   bookmarkChanged = false;
