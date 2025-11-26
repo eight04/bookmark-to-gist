@@ -160,10 +160,10 @@ async function _sync() {
     finalDataArr.push(storedData, remoteData);
   }
   if (shouldPush) {
-    if (shouldPull) {
-      // apply diff to remoteData
-      const diff = diffBookmarkData(storedData || {}, currentData);
-      if (diff) {
+    const diff = diffBookmarkData(storedData || {}, currentData);
+    if (diff) {
+      if (shouldPull) {
+        // apply diff to remoteData
         try {
           await patchBookmarkDiff(diff, remoteData);
           finalDataArr.push(remoteData, await getBookmarkData());
@@ -171,9 +171,10 @@ async function _sync() {
           logger.error("failed to apply diff to remoteData", e);
           browser.storage.local.set({[`wip-${Date.now()}`]: diff});
         }
+      } else {
+        // push full data
+        finalDataArr.push(storedData, currentData);
       }
-    } else {
-      finalDataArr.push(storedData, currentData);
     }
   }
   if (!finalDataArr.length) {
