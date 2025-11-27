@@ -28,6 +28,9 @@ input[type="password"] {
   width: 100%;
   box-sizing: border-box;
 }
+pre {
+  font-size: 0.9em;
+}
 .form {
   display: flex;
   flex-direction: column;

@@ -3,30 +3,48 @@ import browser from "webextension-polyfill";
 const status = document.querySelector(".status");
 const opts = ["token", "gistId", "syncMode"];
 
-document.querySelector("[name=save]").addEventListener("click", async function() {
-  const output = {};
-  for (const opt of opts) {
-    const element = document.querySelector("[name=" + opt + "]");
-    if (element.type === "radio") {
-      output[opt] = document.querySelector("[name=" + opt + "]:checked").value;
+const BUTTON_ACTIONS = {
+  save: async () => {
+    const output = {};
+    for (const opt of opts) {
+      const element = document.querySelector("[name=" + opt + "]");
+      if (element.type === "radio") {
+        try {
+          output[opt] = document.querySelector("[name=" + opt + "]:checked").value;
+        } catch (e) {
+          console.warn(`No radio button selected for ${opt}`);
+        }
+      } else {
+        output[opt] = element.value;
+      }
+    }
+    status.textContent = "Saving...";
+    await browser.storage.local.set(output);
+    status.textContent = "Options saved.";
+  },
+  syncNow: async () => {
+    status.textContent = "Syncing...";
+    try {
+      await browser.runtime.sendMessage({action: "sync"});
+      status.textContent = "Synced.";
+    } catch (e) {
+      status.textContent = e.message;
+    }
+  },
+  openGist: async () => {
+    const gistId = await browser.storage.local.get("gistId").then(result => result.gistId);
+    if (gistId) {
+      const url = `https://gist.github.com/${gistId}`;
+      await browser.tabs.create({url});
     } else {
-      output[opt] = element.value;
+      status.textContent = "Gist ID is not set.";
     }
   }
-  status.textContent = "Saving...";
-  await browser.storage.local.set(output);
-  status.textContent = "Options saved.";
-});
+}
 
-document.querySelector("[name=syncNow]").addEventListener("click", async function() {
-  status.textContent = "Syncing...";
-  try {
-    await browser.runtime.sendMessage({action: "sync"});
-    status.textContent = "Synced.";
-  } catch (e) {
-    status.textContent = e.message;
-  }
-});
+for (const [name, action] of Object.entries(BUTTON_ACTIONS)) {
+  document.querySelector("[name=" + name + "]").addEventListener("click", action);
+}
 
 browser.storage.local.get(["token", "gistId", "syncMode"]).then(function(result) {
   for (const opt of opts) {

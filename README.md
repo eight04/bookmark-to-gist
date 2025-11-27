@@ -6,10 +6,10 @@ Syncs browser bookmarks to a GitHub Gist. Support Firefox, Firefox for Android, 
 
 ### Usage
 
-1. Create a [New personal access token](https://github.com/settings/personal-access-tokens), and grant `gist` permission.
-2. Create a [new gist](https://gist.github.com/) with a file named `bookmark.json` and the content `null`.
+1. Create a [new gist](https://gist.github.com/) with a file named `bookmark.json` and the content `null`.
+2. Create a [New personal access token](https://github.com/settings/personal-access-tokens), and grant `gist` permission.
 3. Open the option page by clicking the extension icon.
-4. Put in the token and gist ID.
+4. Put in gist ID and the personal access token.
 5. Choose the sync mode.
 6. Click Save.
 
