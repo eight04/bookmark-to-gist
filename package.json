@@ -1,6 +1,5 @@
 {
-  "title": "Bookmark Sync",
-  "name": "bookmark-sync",
+  "name": "bookmark-to-gist",
   "version": "0.3.0",
   "description": "Sync bookmarks between browsers",
   "license": "MIT",
@@ -42,7 +41,7 @@
     "tiny-glob": "^0.2.9",
     "web-ext": "^9.2.0"
   },
-  "repository": "eight04/bookmark-sync",
+  "repository": "eight04/bookmark-to-gist",
   "private": true,
   "dependencies": {
     "diff": "^8.0.2",
