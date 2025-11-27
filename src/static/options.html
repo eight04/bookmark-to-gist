@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Options for Bookmark Sync</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <div class="form">
+    <label>
+      <div class="input-title">
+        Gist ID:
+      </div>
+      <input type="text" name="gistId">
+    </label>
+    <label>
+      <div class="input-title">
+        GitHub Token, create a token with "gist" scope:
+        <a href="https://github.com/eight04/Bookmark-Sync/#usage" class="help-link" target="_blank">Help</a>
+      </div>
+      <input type="password" name="token">
+    </label>
+    <div class="radio-group">
+      <div class="input-title">
+        Sync mode:
+      </div>
+      <label>
+        <input type="radio" name="syncMode" value="merge"> Merge
+      </label>
+      <label>
+        <input type="radio" name="syncMode" value="pullOnly"> Pull Only
+      </label>
+    </div>
+  </div>
+  <div class="button-group">
+    <button class="button" name="save" type="button">Save</button>
+    <button class="button" name="syncNow" type="button">Sync Now</button>
+    <button class="button" name="openGist" type="button">Open Gist</button>
+    <span class="status"></span>
+  </div>
+  <pre class="logs"></pre>
+  <div class="wip-container" hidden>
+    Failed patches:
+    <pre class="wip">None</pre>
+  </div>
+</body>
+</html>

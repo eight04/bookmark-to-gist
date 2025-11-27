@@ -1,0 +1,84 @@
+:root {
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --help-link-color: #0066cc;
+  --button-color: #007bff;
+  --button-text-color: #ffffff;
+}
+body {
+  font-size: 16px;
+  font-family: sans-serif;
+  line-height: 1.5;
+  margin: 1.5em;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+input,
+button {
+  font-size: inherit;
+  font-family: inherit;
+  background: inherit;
+  color: inherit;
+}
+input[type="text"],
+input[type="password"] {
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+pre {
+  font-size: 0.9em;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.input-title {
+  margin: 0 0 .3em;
+}
+.help-link {
+  font-size: 0.9em;
+  margin-top: -0.5em;
+  margin-bottom: 1em;
+  color: var(--help-link-color);
+}
+.button-group {
+  margin: 1em 0;
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+}
+button {
+  padding: 0.5em 1em;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--button-color);
+  color: var(--button-text-color);
+  cursor: pointer;
+
+  &:hover {
+    background-color: oklch(from var(--button-color) calc(l + 0.1) c h);
+  }
+  &:active {
+    background-color: oklch(from var(--button-color) calc(l - 0.1) c h);
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    margin: .3em;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #23222b;
+    --text-color: #e0e0e0;
+    --help-link-color: #3399ff;
+    --button-color: #1a73e8;
+    --button-text-color: #ffffff;
+  }
+}
