@@ -35,7 +35,11 @@ browser.storage.local.get(["token", "gistId", "syncMode"]).then(function(result)
     }
     const element = document.querySelector("[name=" + opt + "]");
     if (element.type === "radio") {
-      document.querySelector("[name=" + opt + "][value='" + result[opt] + "']").checked = true;
+      try {
+        document.querySelector("[name=" + opt + "][value='" + result[opt] + "']").checked = true;
+      } catch (e) {
+        console.warn(`No radio button for ${opt}=${result[opt]}`);
+      }
     } else {
       element.value = result[opt];
     }
@@ -66,13 +70,15 @@ function formatLog(log) {
 
 browser.runtime.sendMessage({action: "getLogs"}).then(function(logs) {
   const pre = document.querySelector(".logs");
-  pre.textContent = logs.map(formatLog).join("\n");
+  if (logs.length) {
+    pre.textContent = logs.map(formatLog).join("\n") + "\n";
+  }
 });
 
 browser.runtime.onMessage.addListener(function(message) {
   if (message.action === "newLog") {
     const pre = document.querySelector(".logs");
-    pre.textContent += "\n" + formatLog(message.log);
+    pre.textContent += formatLog(message.log) + "\n";
   }
 });
 
@@ -84,5 +90,6 @@ browser.storage.local.getKeys()
       const wips = Object.values(result).map(w => JSON.stringify(w)).join('\n');
       const container = document.querySelector('.wip');
       container.textContent = wips;
+      document.querySelector('.wip-container').hidden = false;
     }
   });

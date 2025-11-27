@@ -9,27 +9,41 @@
 </head>
 
 <body>
-  <a href="https://github.com/eight04/Bookmark-Sync/#usage">Help</a>
-  <div>
-    GitHub Token:
-    <input type="text" name="token">
-    <br> Gist ID:
-    <input type="text" name="gistId">
-    <br>Sync mode:
+  <div class="form">
     <label>
-      <input type="radio" name="syncMode" value="merge"> Merge
+      <div class="input-title">
+        Gist ID:
+      </div>
+      <input type="text" name="gistId">
     </label>
     <label>
-      <input type="radio" name="syncMode" value="pullOnly"> Pull Only
+      <div class="input-title">
+        GitHub Token, create a token with "gist" scope:
+        <a href="https://github.com/eight04/Bookmark-Sync/#usage" class="help-link" target="_blank">Help</a>
+      </div>
+      <input type="password" name="token">
     </label>
+    <div class="radio-group">
+      <div class="input-title">
+        Sync mode:
+      </div>
+      <label>
+        <input type="radio" name="syncMode" value="merge"> Merge
+      </label>
+      <label>
+        <input type="radio" name="syncMode" value="pullOnly"> Pull Only
+      </label>
+    </div>
   </div>
-  <div style="display: flex;">
+  <div class="button-group">
     <button class="button" name="save" type="button">Save</button>
     <button class="button" name="syncNow" type="button">Sync Now</button>
+    <span class="status"></span>
   </div>
-  <div class="status"></div>
   <pre class="logs"></pre>
-  Failed patches:
-  <pre class="wip">None</pre>
+  <div class="wip-container" hidden>
+    Failed patches:
+    <pre class="wip">None</pre>
+  </div>
 </body>
 </html>
