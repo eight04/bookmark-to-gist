@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
+import {diff, applyPatch} from "flat-json-diff";
 
-import {diffArray, applyArrayDiff} from "./lib/array-diff.js";
 import * as logger from "./lib/logger.js";
 
 const USER_AGENT = navigator.userAgent.match(/Firefox/) ? "firefox" : "chrome";
@@ -215,7 +215,7 @@ function diffBookmarkData(oldData, newData, options) {
   const result = {};
   for (const key in builtinIds) {
     if (!newData[key]) continue;
-    const r = diffArray(oldData[key] || [], newData[key], options);
+    const r = diff(oldData[key] || [], newData[key], options);
     if (!r) continue;
     result[key] = r;
   }
@@ -231,7 +231,7 @@ async function patchBookmarkDiff(diff, data) {
     if (!data[key]) {
       data[key] = [];
     }
-    data[key] = applyArrayDiff(data[key], diff[key]);
+    data[key] = applyPatch(data[key], diff[key]);
   }
   await patchBookmark(data);
 }
