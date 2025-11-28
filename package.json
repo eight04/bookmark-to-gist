@@ -48,6 +48,7 @@
     "event-lite": "^1.0.0",
     "flat-json-diff": "^0.1.0",
     "safe-stable-stringify": "^2.5.0",
+    "treediffer": "^1.1.1",
     "webextension-polyfill": "^0.12.0"
   },
   "type": "module"
