@@ -12,25 +12,27 @@ const builtinIds = {
   // },
   toolbar: {
     chrome: null,
-    firefox: "toolbar_____"
+    firefox: "toolbar_____",
   },
   other: {
     chrome: null,
-    firefox: "unfiled_____"
+    firefox: "unfiled_____",
   },
   mobile: {
     chrome: null,
-    firefox: "mobile______"
+    firefox: "mobile______",
   },
   menu: {
     chrome: null,
-    firefox: "menu________"
+    firefox: "menu________",
   }
 }
 
 let running = false;
 let bookmarkChanged = true; // assume changed on startup
 let syncError = null;
+
+const NATIVE_ID = Symbol();
 
 init();
 
@@ -264,6 +266,7 @@ async function getBookmarkData() {
 
 function cleanBookmark(bookmark) {
   const b = {
+    [NATIVE_ID]: bookmark.id,
     type: getBookmarkType(bookmark),
   };
   if (b.type !== "separator") {
